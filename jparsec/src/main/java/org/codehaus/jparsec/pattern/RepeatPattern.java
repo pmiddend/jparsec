@@ -15,7 +15,12 @@
  *****************************************************************************/
 package org.codehaus.jparsec.pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 class RepeatPattern extends Pattern {
+  private static final transient Logger log = LoggerFactory.getLogger(Patterns.class);
+
   private final int n;
   private final Pattern pattern;
 
@@ -35,10 +40,16 @@ class RepeatPattern extends Pattern {
   static int matchRepeat(int n, Pattern pattern, CharSequence src, int len, int from, int acc) {
     int end = from;
     for (int i = 0; i < n; i++) {
+      log.trace("[RP|n={},p={}] i={}",n,pattern,i);
       int l = pattern.match(src, end, len);
-      if (l == MISMATCH) return MISMATCH;
+      if (l == MISMATCH) {
+        log.trace("[RP|n={},p={}] i={}, mismatch",n,pattern,i);
+        return MISMATCH;
+      }
+      log.trace("[RP|n={},p={}] i={}, match",n,pattern,i);
       end += l;
     }
+    log.trace("[RP|n={},p={}] result {}",n,pattern,end - from + acc);
     return end - from + acc;
   }
 }

@@ -15,7 +15,11 @@
  *****************************************************************************/
 package org.codehaus.jparsec.pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 class ManyPattern extends Pattern {
+  private static final transient Logger log = LoggerFactory.getLogger(Patterns.class);
 
   private final Pattern pattern;
 
@@ -25,12 +29,17 @@ class ManyPattern extends Pattern {
 
   static int matchMany(Pattern pattern, CharSequence src, int len, int from, int acc) {
     for (int i = from;;) {
+      log.trace("[MM|p={}] i={}",pattern,i);
       int l = pattern.match(src, i, len);
-      if (MISMATCH == l)
+      if (MISMATCH == l) {
+        log.trace("[MM|p={}] i={}, mismatch, result {}",pattern,i,i - from + acc);
         return i - from + acc;
+      }
       //we simply stop the loop when infinity is found. this may make the parser more user-friendly.
-      if (l == 0)
+      if (l == 0) {
+        log.trace("[MM|p={}] i={}, l=0, result=",pattern,i,i - from + acc);
         return i - from + acc;
+      }
       i += l;
     }
   }

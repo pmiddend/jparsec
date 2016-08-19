@@ -15,22 +15,16 @@
  *****************************************************************************/
 package org.codehaus.jparsec;
 
+import org.codehaus.jparsec.functors.*;
+import org.codehaus.jparsec.internal.annotations.Private;
+import org.codehaus.jparsec.internal.util.Lists;
+import org.codehaus.jparsec.pattern.Patterns;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-import org.codehaus.jparsec.functors.Map;
-import org.codehaus.jparsec.functors.Map2;
-import org.codehaus.jparsec.functors.Map3;
-import org.codehaus.jparsec.functors.Map4;
-import org.codehaus.jparsec.functors.Map5;
-import org.codehaus.jparsec.functors.Maps;
-import org.codehaus.jparsec.functors.Pair;
-import org.codehaus.jparsec.functors.Tuple3;
-import org.codehaus.jparsec.functors.Tuple4;
-import org.codehaus.jparsec.functors.Tuple5;
-import org.codehaus.jparsec.internal.annotations.Private;
-import org.codehaus.jparsec.internal.util.Lists;
 
 /**
  * Provides common {@link Parser} implementations.
@@ -38,6 +32,7 @@ import org.codehaus.jparsec.internal.util.Lists;
  * @author Ben Yu
  */
 public final class Parsers {
+  private static final transient Logger log = LoggerFactory.getLogger(Patterns.class);
 
   /** {@link Parser} that succeeds only if EOF is met. Fails otherwise. */
   public static final Parser<?> EOF = eof("EOF");
@@ -405,20 +400,45 @@ public final class Parsers {
       final Map5<? super A, ? super B, ? super C, ? super D, ? super E, ? extends T> map) {
     return new Parser<T>() {
       @Override boolean apply(ParseContext ctxt) {
+        log.trace("[SEQ5] trying first {}",p1);
         boolean r1 = p1.apply(ctxt);
-        if (!r1) return false;
+        if (!r1) {
+          log.trace("[SEQ5] first mismatch");
+          return false;
+        }
+        log.trace("[SEQ5] first match");
         A o1 = p1.getReturn(ctxt);
+        log.trace("[SEQ5] trying second {}",p2);
         boolean r2 = p2.apply(ctxt);
-        if (!r2) return false;
+        if (!r2) {
+          log.trace("[SEQ5] second mismatch");
+          return false;
+        }
+        log.trace("[SEQ5] second match");
         B o2 = p2.getReturn(ctxt);
+        log.trace("[SEQ5] trying third {}",p3);
         boolean r3 = p3.apply(ctxt);
-        if (!r3) return false;
+        if (!r3) {
+          log.trace("[SEQ5] mismatch third");
+          return false;
+        }
+        log.trace("[SEQ5] third match");
         C o3 = p3.getReturn(ctxt);
+        log.trace("[SEQ5] trying fourth {}",p4);
         boolean r4 = p4.apply(ctxt);
-        if (!r4) return false;
+        if (!r4) {
+          log.trace("[SEQ5] mismatch fourth");
+          return false;
+        }
+        log.trace("[SEQ5] fourth match");
         D o4 = p4.getReturn(ctxt);
+        log.trace("[SEQ5] trying fifth {}",p5);
         boolean r5 = p5.apply(ctxt);
-        if (!r5) return false;
+        if (!r5) {
+          log.trace("[SEQ5] mismatch fifth");
+          return false;
+        }
+        log.trace("[SEQ5] fifth match");
         E o5 = p5.getReturn(ctxt);
         ctxt.result = map.map(o1, o2, o3, o4, o5);
         return true;
@@ -540,15 +560,19 @@ public final class Parsers {
     if (alternatives.length == 1) return alternatives[0].cast();
     return new Parser<T>() {
       @Override boolean apply(ParseContext ctxt) {
+        log.trace("[ALT={}] trying alternatives",alternatives.length);
         final Object result = ctxt.result;
         final int at = ctxt.at;
         final int step = ctxt.step;
         for(Parser<? extends T> p : alternatives) {
           if (p.apply(ctxt)) {
+            log.trace("[ALT={}] match for {}",alternatives.length,p.toString());
             return true;
           }
+          log.trace("[ALT={}] mismatch for {}",alternatives.length,p.toString());
           ctxt.set(step, at, result);
         }
+        log.trace("[ALT={}] mismatch total",alternatives.length);
         return false;
       }
       @Override public String toString() {

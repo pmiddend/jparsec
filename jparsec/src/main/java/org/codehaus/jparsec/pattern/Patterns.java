@@ -16,6 +16,8 @@
 package org.codehaus.jparsec.pattern;
 
 import org.codehaus.jparsec.internal.util.Checks;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.regex.Matcher;
 
@@ -25,6 +27,7 @@ import java.util.regex.Matcher;
  * @author Ben Yu
  */
 public final class Patterns {
+  private static final transient Logger log = LoggerFactory.getLogger(Patterns.class);
 
   private Patterns() {}
 
@@ -187,12 +190,18 @@ public final class Patterns {
   public static Pattern isChar(final CharPredicate predicate) {
     return new Pattern() {
       @Override public int match(CharSequence src, int begin, int end) {
-        if (begin >= end)
+        if (begin >= end) {
+          log.trace("[CHAR={}] mismatch, begin>=end",predicate);
           return Pattern.MISMATCH;
-        else if (predicate.isChar(src.charAt(begin)))
+        }
+        else if (predicate.isChar(src.charAt(begin))) {
+          log.trace("[CHAR={}] match at \"{}\"",predicate,src.subSequence(begin,end).toString().replace("\n","\\n"));
           return 1;
-        else
+        }
+        else {
+          log.trace("[CHAR={}] mismatch at {}",predicate,src.subSequence(begin,end).toString().replace("\n","\\n"));
           return Pattern.MISMATCH;
+        }
       }
 
       @Override public String toString() {
@@ -213,7 +222,10 @@ public final class Patterns {
   public static Pattern string(final String string) {
     return new Pattern() {
       @Override public int match(CharSequence src, int begin, int end) {
-        if ((end - begin) < string.length()) return MISMATCH;
+        if ((end - begin) < string.length()) {
+          log.trace("[STRING={}] mismatch at {} (underflow)",string,src.subSequence(begin,end).toString().replace("\n","\\n"));
+          return MISMATCH;
+        }
         return matchString(string, src, begin, end);
       }
       @Override public String toString() {
@@ -513,11 +525,16 @@ public final class Patterns {
     return new Pattern() {
       @Override
       public int match(CharSequence src, int begin, int end) {
-        if (begin > end)
+        if (begin > end) {
+          log.trace("[RX='{}'] mismatch (underflow)",p);
           return Pattern.MISMATCH;
+        }
         Matcher matcher = p.matcher(src.subSequence(begin, end));
-        if (matcher.lookingAt())
+        if (matcher.lookingAt()) {
+          log.trace("[RX='{}'] match",p);
           return matcher.end();
+        }
+        log.trace("[RX='{}'] mismatch",p);
         return Pattern.MISMATCH;
       }
     };
@@ -589,8 +606,12 @@ public final class Patterns {
     for (; (i < patternLength) && ((begin + i) < end); i++) {
       final char exp = str.charAt(i);
       final char enc = src.charAt(begin + i);
-      if (exp != enc) return Pattern.MISMATCH;
+      if (exp != enc) {
+        log.trace("[STRING={}] mismatch at {}",str,src.subSequence(begin,end).toString().replace("\n","\\n"));
+        return Pattern.MISMATCH;
+      }
     }
+    log.trace("[STRING={}] match at {}",str,src.subSequence(begin,end).toString().replace("\n","\\n"));
     return i;
   }
 }

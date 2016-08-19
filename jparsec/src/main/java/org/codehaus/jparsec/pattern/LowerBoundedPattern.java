@@ -15,7 +15,12 @@
  *****************************************************************************/
 package org.codehaus.jparsec.pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 class LowerBoundedPattern extends Pattern {
+  private static final transient Logger log = LoggerFactory.getLogger(Patterns.class);
+
   private final int min;
   private final Pattern pattern;
 
@@ -25,8 +30,10 @@ class LowerBoundedPattern extends Pattern {
   }
 
   @Override public int match(CharSequence src, int begin, int end) {
+    log.trace("[LB={}] matching pattern \"{}\" at \"{}\"",min,pattern.toString(),src.subSequence(begin,end).toString().replace("\n","\\n"));
     int minLen = RepeatPattern.matchRepeat(min, pattern, src, end, begin, 0);
     if (MISMATCH == minLen) return MISMATCH;
+    log.trace("[LB={}] minLen={}",min,minLen);
     return ManyPattern.matchMany(pattern, src, end, begin + minLen, minLen);
   }
 
